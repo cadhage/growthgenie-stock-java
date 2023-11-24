@@ -72,6 +72,82 @@ public class WealthiestCustomerController {
             return null;
         }
     }
+// ... (other code remains the same)
+
+    // Method to calculate total wealth of the customer based on their assets
+    private double calculateTotalWealthForCustomer(int customerId, List<JSONObject> accountData,
+                                                   List<JSONObject> mutualFundsData,
+                                                   List<JSONObject> stocksData,
+                                                   List<JSONObject> fixedDepositsData) {
+        double totalWealth = 0.0;
+
+        // Calculate total wealth based on AccountID or CustomerID from different asset data
+        totalWealth += calculateTotalAccountWealth(customerId, accountData);
+        totalWealth += calculateTotalMutualFundsWealth(customerId, mutualFundsData);
+        totalWealth += calculateTotalStocksWealth(customerId, stocksData);
+        totalWealth += calculateTotalFixedDepositsWealth(customerId, fixedDepositsData);
+
+        return totalWealth;
+    }
+
+    // Method to calculate total wealth from accounts based on CustomerID
+    private double calculateTotalAccountWealth(int customerId, List<JSONObject> accountData) {
+        double totalAccountWealth = 0.0;
+
+        for (JSONObject account : accountData) {
+            int accountCustomerId = account.getInt("CustomerID");
+            if (accountCustomerId == customerId) {
+                double accountBalance = account.getDouble("AccountBalance");
+                totalAccountWealth += accountBalance;
+            }
+        }
+        return totalAccountWealth;
+    }
+
+    // Method to calculate total wealth from mutual funds based on CustomerID
+    private double calculateTotalMutualFundsWealth(int customerId, List<JSONObject> mutualFundsData) {
+        double totalMutualFundsWealth = 0.0;
+
+        for (JSONObject mutualFund : mutualFundsData) {
+            int investmentCustomerId = mutualFund.getInt("CustomerID");
+            if (investmentCustomerId == customerId) {
+                double investmentAmount = mutualFund.getDouble("InvestmentAmount");
+                totalMutualFundsWealth += investmentAmount;
+            }
+        }
+        return totalMutualFundsWealth;
+    }
+
+    // Method to calculate total wealth from stocks based on CustomerID
+    private double calculateTotalStocksWealth(int customerId, List<JSONObject> stocksData) {
+        double totalStocksWealth = 0.0;
+
+        for (JSONObject stock : stocksData) {
+            int investmentCustomerId = stock.getInt("CustomerID");
+            if (investmentCustomerId == customerId) {
+                double purchasePrice = stock.getDouble("PurchasePrice");
+                int quantity = stock.getInt("Quantity");
+                totalStocksWealth += (purchasePrice * quantity);
+            }
+        }
+        return totalStocksWealth;
+    }
+
+    // Method to calculate total wealth from fixed deposits based on CustomerID
+    private double calculateTotalFixedDepositsWealth(int customerId, List<JSONObject> fixedDepositsData) {
+        double totalFixedDepositsWealth = 0.0;
+
+        for (JSONObject fixedDeposit : fixedDepositsData) {
+            int investmentCustomerId = fixedDeposit.getInt("CustomerID");
+            if (investmentCustomerId == customerId) {
+                double maturityAmount = fixedDeposit.getDouble("MaturityAmount");
+                totalFixedDepositsWealth += maturityAmount;
+            }
+        }
+        return totalFixedDepositsWealth;
+    }
+
+// ... (other code remains the same)
 
     // Method to calculate total wealth of each customer based on their assets
     // Method to calculate total wealth of each customer based on their assets
