@@ -12,60 +12,7 @@ import java.util.*;
 
 @RestController
 public class WealthiestCustomerController {
-
-    private static final String[] EXCEL_FILES = {
-            "customers.xlsx",
-            "accounts.xlsx",
-            "transactions.xlsx",
-            "loans.xlsx",
-            "investment_accounts.xlsx",
-            "mutual_funds.xlsx",
-            "fixed_deposits.xlsx",
-            "stocks.xlsx"
-            // Add other Excel file names from your schema here
-    };
     private List<JSONObject> readDataFromSheet(String filename) {
-//        List<JSONObject> sheetData = new ArrayList<>();
-//
-//        // Read headers
-//        Row headerRow = sheet.getRow(0);
-//        String[] headers = new String[headerRow.getLastCellNum()];
-//        for (int i = 0; i < headerRow.getLastCellNum(); i++) {
-//            headers[i] = headerRow.getCell(i).getStringCellValue();
-//        }
-//
-//        // Iterate through rows (starting from row 1 as row 0 is the header)
-//        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-//            Row row = sheet.getRow(i);
-//            JSONObject rowData = new JSONObject();
-//            for (int j = 0; j < headers.length; j++) {
-//                Cell cell = row.getCell(j);
-//                if (cell != null) {
-//                    switch (cell.getCellType()) {
-//                        case STRING:
-//                            rowData.put(headers[j], cell.getStringCellValue());
-//                            break;
-//                        case NUMERIC:
-//                            if (DateUtil.isCellDateFormatted(cell)) {
-//                                rowData.put(headers[j], cell.getDateCellValue().toString());
-//                            } else {
-//                                rowData.put(headers[j], cell.getNumericCellValue());
-//                            }
-//                            break;
-//                        case BOOLEAN:
-//                            rowData.put(headers[j], cell.getBooleanCellValue());
-//                            break;
-//                        default:
-//                            rowData.put(headers[j], "UNKNOWN");
-//                            break;
-//                    }
-//                } else {
-//                    rowData.put(headers[j], JSONObject.NULL);
-//                }
-//            }
-//            sheetData.add(rowData);
-//        }
-//        return sheetData;
         try {
             FileInputStream mutualFundsFile = new FileInputStream(new File(filename));
             Workbook workbook = new XSSFWorkbook(mutualFundsFile);
@@ -127,13 +74,14 @@ public class WealthiestCustomerController {
     }
 
     // Method to calculate total wealth of each customer based on their assets
-    private Map<String, Double> calculateTotalWealth(
+    // Method to calculate total wealth of each customer based on their assets
+    private Map<Integer, Double> calculateTotalWealth(
             List<JSONObject> accountData,
             List<JSONObject> mutualFundsData,
             List<JSONObject> stocksData,
             List<JSONObject> fixedDepositsData
     ) {
-        Map<String, Double> customerIdToTotalWealth = new HashMap<>();
+        Map<Integer, Double> customerIdToTotalWealth = new HashMap<>();
 
         // Process accountData, mutualFundsData, stocksData, fixedDepositsData to calculate total wealth
         // You need to match AccountID or CustomerID to calculate the total wealth
@@ -141,8 +89,8 @@ public class WealthiestCustomerController {
 
         // Example logic to calculate total wealth
         for (JSONObject account : accountData) {
-            String customerId = account.getString("CustomerID");
-            double accountBalance = account.getDouble("AccountBalance");
+            int customerId = account.getInt("CUSTOMERID");
+            double accountBalance = account.getDouble("ACCOUNTBALANCE");
 
             // Assuming you have similar fields for mutual funds, stocks, and fixed deposits
             // Fetch related data from mutualFundsData, stocksData, fixedDepositsData based on AccountID or CustomerID
@@ -158,21 +106,66 @@ public class WealthiestCustomerController {
     }
 
     // Method to find the wealthiest customer
-//    private int findWealthiestCustomer(Map<String, Double> customerIdToWealth) {
-//        // Find the CustomerID with the highest total wealth
-//        return
-//    }
+    // ... (other code remains the same)
 
-    // Method to get customer details (name, wealth, etc.)
-    private JSONObject getCustomerDetails(int customerId) {
-        // Retrieve customer details based on the CustomerID
-        // Use data from Customers.xlsx to get customer details (e.g., name)
-        // Construct and return a JSONObject with customer details
+    // Method to find the wealthiest customer and return their details including wealth
+    private JSONObject findWealthiestCustomer(Map<Integer, Double> customerIdToTotalWealth,
+                                              List<JSONObject> customerData,
+                                              List<JSONObject> accountData,
+                                              List<JSONObject> mutualFundsData,
+                                              List<JSONObject> stocksData,
+                                              List<JSONObject> fixedDepositsData) {
+        JSONObject wealthiestCustomerDetails = new JSONObject();
+
+        // Find the customer with the highest wealth
+        double maxWealth = Collections.max(customerIdToTotalWealth.values());
+        int wealthiestCustomerId = -1;
+
+        for (Map.Entry<Integer, Double> entry : customerIdToTotalWealth.entrySet()) {
+            if (entry.getValue().equals(maxWealth)) {
+                wealthiestCustomerId = entry.getKey();
+                break;
+            }
+        }
+
+        // Get the details of the wealthiest customer based on CustomerID
+        if (wealthiestCustomerId != -1) {
+            JSONObject wealthiestCustomer = getCustomerDetails(wealthiestCustomerId, customerData);
+            // Add wealth to the wealthiest customer details
+            wealthiestCustomer.put("Wealth", maxWealth);
+
+            wealthiestCustomerDetails = wealthiestCustomer;
+        }
+
+        return wealthiestCustomerDetails;
+    }
+
+    private JSONObject getCustomerDetails(int customerId, List<JSONObject> customerData) {
+        // Find the customer in the list based on the CustomerID
         JSONObject customerDetails = new JSONObject();
-        // Fetch customer details and construct the JSONObject
-        // customerDetails.put("Name", ...);
-        // customerDetails.put("Wealth", ...);
 
+        for (JSONObject customer : customerData) {
+            int customerID = customer.getInt("CUSTOMERID");
+            if (customerID == customerId) {
+                // Assuming the customer details contain fields like FirstName, LastName, etc.
+                String firstName = customer.getString("FIRSTNAME");
+                String lastName = customer.getString("LASTNAME");
+                String email=customer.getString("EMAIL");
+                String phone=customer.getString("PHONE");
+//                double totalWealth +=
+
+
+                // Populate customer details into a JSONObject
+                customerDetails.put("CustomerID", customerId);
+                customerDetails.put("FirstName", firstName);
+                customerDetails.put("LastName", lastName);
+                customerDetails.put("email",email);
+                customerDetails.put("phone",phone);
+//                customerDetails.put("Wealth", wealth); // Include wealth or any other relevant details
+
+                break; // Stop searching once the customer is found
+            }
+        }
         return customerDetails;
     }
     private static final String ACCOUNTS_SHEET = "Accounts Table"; // Sheet name for Accounts
@@ -184,23 +177,21 @@ public class WealthiestCustomerController {
             List<JSONObject> mutualFundsData = new ArrayList<>();
             List<JSONObject> stocksData = new ArrayList<>();
             List<JSONObject> fixedDepositsData = new ArrayList<>();
-
+            List<JSONObject> customerData = new ArrayList<>();
             // Read account data from Accounts.xlsx
             accountData = readDataFromSheet("E:\\Downloads\\accounts.xlsx");
             mutualFundsData = readDataFromSheet("E:\\Downloads\\mutual_funds.xlsx");
             stocksData = readDataFromSheet("E:\\Downloads\\stocks.xlsx");
             fixedDepositsData = readDataFromSheet("E:\\Downloads\\fixed_deposits.xlsx");
+            customerData = readDataFromSheet("E:\\Downloads\\customers.xlsx");
 
             // Calculate total wealth of each customer based on their assets
-            Map<String, Double> customerIdToWealth = calculateTotalWealth(accountData, mutualFundsData, stocksData, fixedDepositsData);
+            Map<Integer, Double> customerIdToWealth = calculateTotalWealth(accountData, mutualFundsData, stocksData, fixedDepositsData);
 
             // Find the wealthiest customer
-//            int wealthiestCustomerId = findWealthiestCustomer(customerIdToWealth);
-//
-//            // Get the details of the wealthiest customer
-//            JSONObject wealthiestCustomerDetails = getCustomerDetails(wealthiestCustomerId);
+            JSONObject wealthiestCustomerId = findWealthiestCustomer(customerIdToWealth,customerData,accountData,mutualFundsData, stocksData, fixedDepositsData);
 
-            return customerIdToWealth.toString();
+            return wealthiestCustomerId.toString();
         } catch (Exception e) {
             e.printStackTrace();
             return "Error fetching wealthiest customer";
