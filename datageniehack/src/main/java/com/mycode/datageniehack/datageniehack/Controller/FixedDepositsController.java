@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @RestController
 public class FixedDepositsController {
 
-    private static final String FIXED_DEPOSITS_FILE = "fixed_deposits.xlsx";
+    private static final String FIXED_DEPOSITS_FILE = "E:\\Downloads\\fixed_deposits.xlsx";
 
     @GetMapping("/api/topfixeddeposits")
     public String getTopFixedDeposits() {
@@ -80,7 +80,7 @@ public class FixedDepositsController {
 
     private List<JSONObject> getTopFixedDepositsByMaturityAmount(List<JSONObject> fixedDepositsData, int limit) {
         List<JSONObject> sortedByMaturityAmount = fixedDepositsData.stream()
-                .sorted(Comparator.comparingDouble(fd -> fd.getDouble("MaturityAmount")))
+                .sorted(Comparator.comparingDouble(fd -> fd.getDouble("MATURITYAMOUNT")))
                 .collect(Collectors.toList());
 
         return sortedByMaturityAmount.stream().limit(limit).collect(Collectors.toList());
