@@ -91,6 +91,7 @@ public class WealthiestCustomerController {
         for (JSONObject account : accountData) {
             int customerId = account.getInt("CUSTOMERID");
             double accountBalance = account.getDouble("ACCOUNTBALANCE");
+//            double mutualFunds=mutualFundsData.getDouble("INVESTMENTAMOUNT");
 
             // Assuming you have similar fields for mutual funds, stocks, and fixed deposits
             // Fetch related data from mutualFundsData, stocksData, fixedDepositsData based on AccountID or CustomerID
@@ -105,8 +106,6 @@ public class WealthiestCustomerController {
         return customerIdToTotalWealth;
     }
 
-    // Method to find the wealthiest customer
-    // ... (other code remains the same)
 
     // Method to find the wealthiest customer and return their details including wealth
     private JSONObject findWealthiestCustomer(Map<Integer, Double> customerIdToTotalWealth,
