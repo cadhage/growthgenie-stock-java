@@ -6,6 +6,7 @@ import com.mycode.datageniehack.datageniehack.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -38,9 +39,15 @@ public class LoginController {
 //
     @PostMapping("/user")
     public User create(@RequestBody User user){
+
         return userService.saveUser(user);
     }
-//
+//    @PostMapping("/testuser")
+//    public void testuser(@RequestBody User user){
+//        System.out.println("********************************");
+//        System.out.println(user.getFirstName());
+//    }
+////
 //    @PutMapping("/user/{id}")
 //    public User update(@PathVariable String id, @RequestBody Map<String, String> body){
 //        int userId = Integer.parseInt(id);
