@@ -80,7 +80,7 @@ public class StocksController {
 
     private List<JSONObject> getTopStocksByPurchasePrice(List<JSONObject> stocksData, int limit) {
         List<JSONObject> sortedByPurchasePrice = stocksData.stream()
-                .sorted(Comparator.comparingDouble(stock -> stock.getDouble("PurchasePrice")))
+                .sorted(Comparator.comparingDouble(stock -> stock.getDouble("PURCHASEPRICE")))
                 .collect(Collectors.toList());
 
         return sortedByPurchasePrice.stream().limit(limit).collect(Collectors.toList());
