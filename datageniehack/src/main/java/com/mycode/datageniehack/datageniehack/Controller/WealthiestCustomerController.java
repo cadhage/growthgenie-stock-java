@@ -8,7 +8,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 public class WealthiestCustomerController {
@@ -272,4 +276,236 @@ public class WealthiestCustomerController {
             return "Error fetching wealthiest customer";
         }
     }
+    @GetMapping("/api/topwealthiestcustomers")
+    public String getTopWealthiestCustomers() {
+        try {
+            List<JSONObject> accountData = readDataFromSheet("E:\\Downloads\\accounts.xlsx");
+            List<JSONObject> mutualFundsData = readDataFromSheet("E:\\Downloads\\mutual_funds.xlsx");
+            List<JSONObject> stocksData = readDataFromSheet("E:\\Downloads\\stocks.xlsx");
+            List<JSONObject> fixedDepositsData = readDataFromSheet("E:\\Downloads\\fixed_deposits.xlsx");
+            List<JSONObject> customerData = readDataFromSheet("E:\\Downloads\\customers.xlsx");
+
+            // Calculate total wealth of each customer based on their assets
+            Map<Integer, Double> customerIdToWealth = calculateTotalWealth(accountData, mutualFundsData, stocksData, fixedDepositsData);
+
+            // Create a list of entries (customer ID and wealth) to sort the wealthiest customers
+            List<Map.Entry<Integer, Double>> sortedList = new ArrayList<>(customerIdToWealth.entrySet());
+            sortedList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
+
+            // Retrieve the top 5 wealthiest customers
+            List<JSONObject> topWealthiestCustomers = new ArrayList<>();
+            int count = 0;
+            for (Map.Entry<Integer, Double> entry : sortedList) {
+                if (count >= 5) {
+                    break;
+                }
+                int customerId = entry.getKey();
+                double wealth = entry.getValue();
+                JSONObject wealthiestCustomer = getCustomerDetails(customerId, customerData);
+                wealthiestCustomer.put("Wealth", wealth);
+                topWealthiestCustomers.add(wealthiestCustomer);
+                count++;
+            }
+
+            return topWealthiestCustomers.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error fetching top wealthiest customers";
+        }
+    }
+//        @GetMapping("/api/topwealthiestcustomers/historicalreturns")
+//        public List<JSONObject> getTopWealthiestCustomersHistoricalReturns() {
+//            try {
+//                // Read necessary data from the provided files
+//                List<JSONObject> accountData = readDataFromSheet("E:\\Downloads\\accounts.xlsx");
+//                List<JSONObject> mutualFundsData = readDataFromSheet("E:\\Downloads\\mutual_funds.xlsx");
+//                List<JSONObject> stocksData = readDataFromSheet("E:\\Downloads\\stocks.xlsx");
+//                List<JSONObject> fixedDepositsData = readDataFromSheet("E:\\Downloads\\fixed_deposits.xlsx");
+//                List<JSONObject> customerData = readDataFromSheet("E:\\Downloads\\customers.xlsx");
+//
+//                // Calculate total wealth for each customer
+//                Map<Integer, Double> customerIdToTotalWealth = calculateTotalWealth(
+//                        accountData,
+//                        mutualFundsData,
+//                        stocksData,
+//                        fixedDepositsData
+//                );
+//
+//                // Get the top 5 wealthiest customers
+//                List<Map.Entry<Integer, Double>> topWealthiestCustomers = customerIdToTotalWealth.entrySet().stream()
+//                        .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+//                        .limit(5)
+//                        .collect(Collectors.toList());
+//
+//                List<JSONObject> historicalReturns = new ArrayList<>();
+//
+//                // Calculate monthly returns for the top 5 wealthiest customers
+//                for (Map.Entry<Integer, Double> entry : topWealthiestCustomers) {
+//                    int customerId = entry.getKey();
+//                    double totalWealth = entry.getValue();
+//
+//                    // Your logic to calculate monthly returns for each customer using their historical data
+//                    // Calculate monthly returns for accounts, mutual funds, stocks, fixed deposits, etc.
+//                    // Populate the historicalReturns list with JSONObjects containing monthly return data
+//                    // Example:
+//                    JSONObject customerReturnData = new JSONObject();
+//                    customerReturnData.put("CustomerId", customerId);
+//                    customerReturnData.put("TotalWealth", totalWealth);
+//                    // Add monthly return data for each customer
+//
+//                    historicalReturns.add(customerReturnData);
+//                }
+//
+//                // Process and return historical returns data
+//                return historicalReturns;
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                // Handle exceptions accordingly
+//                return new ArrayList<>();
+//            }
+//        }
+@GetMapping("/api/topwealthiestcustomers/historicalreturns")
+public List<JSONObject> getTopWealthiestCustomersHistoricalReturns() {
+    try {
+        // Read necessary data from the provided files
+        List<JSONObject> accountData = readDataFromSheet("E:\\Downloads\\accounts.xlsx");
+        List<JSONObject> mutualFundsData = readDataFromSheet("E:\\Downloads\\mutual_funds.xlsx");
+        List<JSONObject> stocksData = readDataFromSheet("E:\\Downloads\\stocks.xlsx");
+        List<JSONObject> fixedDepositsData = readDataFromSheet("E:\\Downloads\\fixed_deposits.xlsx");
+        List<JSONObject> customerData = readDataFromSheet("E:\\Downloads\\customers.xlsx");
+        List<JSONObject> transactionData=readDataFromSheet("E:\\Downloads\\transactions.xlsx");
+        // Calculate total wealth for each customer
+        Map<Integer, Double> customerIdToTotalWealth = calculateTotalWealth(
+                accountData,
+                mutualFundsData,
+                stocksData,
+                fixedDepositsData
+        );
+
+        // Get the top 5 wealthiest customers
+        List<Map.Entry<Integer, Double>> topWealthiestCustomers = customerIdToTotalWealth.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(5)
+                .collect(Collectors.toList());
+
+        List<JSONObject> historicalReturns = new ArrayList<>();
+
+        // Calculate monthly returns for the top 5 wealthiest customers
+        for (Map.Entry<Integer, Double> entry : topWealthiestCustomers) {
+            int customerId = entry.getKey();
+            double totalWealth = entry.getValue();
+
+            // Calculate monthly returns for each customer based on different asset types
+            // Example: For accounts
+            List<JSONObject> customerAccountData = filterDataByCustomerId(accountData, customerId);
+            Map<String, Double> monthlyAccountReturns = calculateMonthlyReturnsForAccounts(customerAccountData,transactionData,customerId);
+
+            // Similarly, calculate monthly returns for mutual funds, stocks, fixed deposits
+
+            // Create a JSONObject to store monthly return data
+            JSONObject customerReturnData = new JSONObject();
+            customerReturnData.put("CustomerId", customerId);
+            customerReturnData.put("TotalWealth", totalWealth);
+            customerReturnData.put("MonthlyReturns_Accounts", monthlyAccountReturns);
+            // Add other calculated monthly returns for different asset types
+
+            historicalReturns.add(customerReturnData);
+        }
+
+        // Process and return historical returns data
+        return historicalReturns;
+    } catch (Exception e) {
+        e.printStackTrace();
+        // Handle exceptions accordingly
+        return new ArrayList<>();
+    }
+}
+
+    // Helper methods for filtering and calculating monthly returns for different asset types
+
+    // Method to filter data by customer ID (for accounts, mutual funds, etc.)
+    private List<JSONObject> filterDataByCustomerId(List<JSONObject> data, int customerId) {
+        return data.stream()
+                .filter(obj -> obj.getInt("CUSTOMERID") == customerId)
+                .collect(Collectors.toList());
+    }
+
+    // Method to calculate monthly returns for accounts
+//    private Map<String, Double> calculateMonthlyReturnsForAccounts(List<JSONObject> accountData) {
+//        Map<String, Double> monthlyReturns = new HashMap<>();
+//
+//
+//        // Group account data by month
+//        Map<String, List<JSONObject>> accountsByMonth = accountData.stream()
+//                .collect(Collectors.groupingBy(account -> {
+//                    LocalDate date = LocalDate.parse(account.getString("LASTTRANSACTIONDATE"));
+//                    return date.getMonth().toString() + "-" + date.getYear(); // Group by month-year format
+//                }));
+//
+//        // Calculate monthly returns based on grouped data
+//        for (Map.Entry<String, List<JSONObject>> entry : accountsByMonth.entrySet()) {
+//            String month = entry.getKey();
+//            List<JSONObject> transactions = entry.getValue();
+//
+//            double startingBalance = transactions.get(0).getDouble("StartingBalance");
+//            double endingBalance = transactions.get(transactions.size() - 1).getDouble("EndingBalance");
+//
+//            double monthlyReturn = (endingBalance - startingBalance) / startingBalance * 100.0;
+//
+//            monthlyReturns.put(month, monthlyReturn);
+//        }
+//
+////        return monthlyReturns;
+//
+//        return monthlyReturns;
+//    }
+    private Map<String, Double> calculateMonthlyReturnsForAccounts(List<JSONObject> customerAccountData, List<JSONObject> transactionData,int customerId) {
+        Map<String, Double> monthlyReturns = new HashMap<>();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("E MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
+
+        String lastTransactionDateStr = customerAccountData.get(0).getString("LASTTRANSACTIONDATE");
+        LocalDateTime lastTransactionDate = LocalDateTime.parse(lastTransactionDateStr, formatter);
+
+        List<JSONObject> transactionsForCustomer = transactionData.stream()
+                .filter(transaction -> transaction.getInt("ACCOUNTID") == customerId
+                        && transaction.getString("TRANSACTIONSTATUS").equals("APPROVED"))
+                .collect(Collectors.toList());
+
+        // Group transactions by month
+        Map<String, Double> totalAmountByMonth = new HashMap<>();
+        for (JSONObject transaction : transactionsForCustomer) {
+            LocalDateTime transactionDate = LocalDateTime.parse(transaction.getString("TRANSACTIONDATE"), formatter);
+            String monthYear = transactionDate.getMonth().toString() + "-" + transactionDate.getYear();
+
+            totalAmountByMonth.merge(monthYear, transaction.getDouble("AMOUNT"), Double::sum);
+        }
+
+        // Calculate monthly returns for the account
+        List<String> months = new ArrayList<>(totalAmountByMonth.keySet());
+        Collections.sort(months); // Sort months chronologically
+        for (int i = 1; i < months.size(); i++) {
+            String currentMonth = months.get(i);
+            String previousMonth = months.get(i - 1);
+
+            double currentAmount = totalAmountByMonth.get(currentMonth);
+            double previousAmount = totalAmountByMonth.get(previousMonth);
+
+            double monthlyReturn = ((currentAmount - previousAmount) / previousAmount) * 100.0;
+
+            // Construct a unique identifier using customerId and monthYear
+            String identifier = customerId + "-" + currentMonth;
+            monthlyReturns.put(identifier, monthlyReturn);
+        }
+
+        return monthlyReturns;
+    }
+
+
+
+
+
+    // Methods for calculating monthly returns for other asset types (mutual funds, stocks, fixed deposits)
+
+    // ... (other methods)
 }
