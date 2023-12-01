@@ -1,13 +1,17 @@
 package com.mycode.datageniehack.datageniehack.Controller;
 
+import com.mycode.datageniehack.datageniehack.Service.CustomUserDetailsService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.sql.*;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -276,42 +280,47 @@ public class WealthiestCustomerController {
             return "Error fetching wealthiest customer";
         }
     }
+    @Autowired
+    CustomUserDetailsService customUserDetailsService;
     @GetMapping("/api/topwealthiestcustomers")
     public String getTopWealthiestCustomers() {
-        try {
-            List<JSONObject> accountData = readDataFromSheet("E:\\Downloads\\accounts.xlsx");
-            List<JSONObject> mutualFundsData = readDataFromSheet("E:\\Downloads\\mutual_funds.xlsx");
-            List<JSONObject> stocksData = readDataFromSheet("E:\\Downloads\\stocks.xlsx");
-            List<JSONObject> fixedDepositsData = readDataFromSheet("E:\\Downloads\\fixed_deposits.xlsx");
-            List<JSONObject> customerData = readDataFromSheet("E:\\Downloads\\customers.xlsx");
+//        try {
+//            List<JSONObject> accountData = readDataFromSheet("E:\\Downloads\\accounts.xlsx");
+//            List<JSONObject> mutualFundsData = readDataFromSheet("E:\\Downloads\\mutual_funds.xlsx");
+//            List<JSONObject> stocksData = readDataFromSheet("E:\\Downloads\\stocks.xlsx");
+//            List<JSONObject> fixedDepositsData = readDataFromSheet("E:\\Downloads\\fixed_deposits.xlsx");
+//            List<JSONObject> customerData = readDataFromSheet("E:\\Downloads\\customers.xlsx");
+//
+//            // Calculate total wealth of each customer based on their assets
+//            Map<Integer, Double> customerIdToWealth = calculateTotalWealth(accountData, mutualFundsData, stocksData, fixedDepositsData);
+//
+//            // Create a list of entries (customer ID and wealth) to sort the wealthiest customers
+//            List<Map.Entry<Integer, Double>> sortedList = new ArrayList<>(customerIdToWealth.entrySet());
+//            sortedList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
+//
+//            // Retrieve the top 5 wealthiest customers
+//            List<JSONObject> topWealthiestCustomers = new ArrayList<>();
+//            int count = 0;
+//            for (Map.Entry<Integer, Double> entry : sortedList) {
+//                if (count >= 5) {
+//                    break;
+//                }
+//                int customerId = entry.getKey();
+//                double wealth = entry.getValue();
+//                JSONObject wealthiestCustomer = getCustomerDetails(customerId, customerData);
+//                wealthiestCustomer.put("Wealth", wealth);
+//                topWealthiestCustomers.add(wealthiestCustomer);
+//                count++;
+//            }
+//
+//            return topWealthiestCustomers.toString();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "Error fetching top wealthiest customers";
+//        }
+           return customUserDetailsService.getWealthiestCustomer().toString();
+//           return null;
 
-            // Calculate total wealth of each customer based on their assets
-            Map<Integer, Double> customerIdToWealth = calculateTotalWealth(accountData, mutualFundsData, stocksData, fixedDepositsData);
-
-            // Create a list of entries (customer ID and wealth) to sort the wealthiest customers
-            List<Map.Entry<Integer, Double>> sortedList = new ArrayList<>(customerIdToWealth.entrySet());
-            sortedList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
-
-            // Retrieve the top 5 wealthiest customers
-            List<JSONObject> topWealthiestCustomers = new ArrayList<>();
-            int count = 0;
-            for (Map.Entry<Integer, Double> entry : sortedList) {
-                if (count >= 5) {
-                    break;
-                }
-                int customerId = entry.getKey();
-                double wealth = entry.getValue();
-                JSONObject wealthiestCustomer = getCustomerDetails(customerId, customerData);
-                wealthiestCustomer.put("Wealth", wealth);
-                topWealthiestCustomers.add(wealthiestCustomer);
-                count++;
-            }
-
-            return topWealthiestCustomers.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Error fetching top wealthiest customers";
-        }
     }
 //        @GetMapping("/api/topwealthiestcustomers/historicalreturns")
 //        public List<JSONObject> getTopWealthiestCustomersHistoricalReturns() {
@@ -430,35 +439,7 @@ public List<JSONObject> getTopWealthiestCustomersHistoricalReturns() {
                 .collect(Collectors.toList());
     }
 
-    // Method to calculate monthly returns for accounts
-//    private Map<String, Double> calculateMonthlyReturnsForAccounts(List<JSONObject> accountData) {
-//        Map<String, Double> monthlyReturns = new HashMap<>();
-//
-//
-//        // Group account data by month
-//        Map<String, List<JSONObject>> accountsByMonth = accountData.stream()
-//                .collect(Collectors.groupingBy(account -> {
-//                    LocalDate date = LocalDate.parse(account.getString("LASTTRANSACTIONDATE"));
-//                    return date.getMonth().toString() + "-" + date.getYear(); // Group by month-year format
-//                }));
-//
-//        // Calculate monthly returns based on grouped data
-//        for (Map.Entry<String, List<JSONObject>> entry : accountsByMonth.entrySet()) {
-//            String month = entry.getKey();
-//            List<JSONObject> transactions = entry.getValue();
-//
-//            double startingBalance = transactions.get(0).getDouble("StartingBalance");
-//            double endingBalance = transactions.get(transactions.size() - 1).getDouble("EndingBalance");
-//
-//            double monthlyReturn = (endingBalance - startingBalance) / startingBalance * 100.0;
-//
-//            monthlyReturns.put(month, monthlyReturn);
-//        }
-//
-////        return monthlyReturns;
-//
-//        return monthlyReturns;
-//    }
+
     private Map<String, Double> calculateMonthlyReturnsForAccounts(List<JSONObject> customerAccountData, List<JSONObject> transactionData,int customerId) {
         Map<String, Double> monthlyReturns = new HashMap<>();
 
