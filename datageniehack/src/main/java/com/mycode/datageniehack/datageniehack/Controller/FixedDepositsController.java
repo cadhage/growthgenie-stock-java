@@ -1,9 +1,12 @@
 package com.mycode.datageniehack.datageniehack.Controller;
 
+import com.mycode.datageniehack.datageniehack.Service.FixedDepositsService;
+import com.mycode.datageniehack.datageniehack.Service.StocksService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,7 +22,14 @@ import java.util.stream.Collectors;
 public class FixedDepositsController {
 
     private static final String FIXED_DEPOSITS_FILE = "E:\\Downloads\\fixed_deposits.xlsx";
-
+    @Autowired
+    FixedDepositsService fixedDepositsService;
+    @GetMapping("/get/api/top/FDs")
+    public String getCustomerTransactions() {
+        List<JSONObject> responseObject =fixedDepositsService.getTopPerformingFDs();
+//        System.out.println(responseObject);
+        return responseObject.toString();
+    }
     @GetMapping("/api/topfixeddeposits")
     public String getTopFixedDeposits() {
         try {

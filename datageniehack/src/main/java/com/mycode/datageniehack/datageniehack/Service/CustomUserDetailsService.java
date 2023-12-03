@@ -13,7 +13,6 @@ import java.util.List;
 
 @Service
 public class CustomUserDetailsService {
-    List<JSONObject> taxLiability=new ArrayList<>();
     public List<JSONObject> getWealthiestCustomer() {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
@@ -26,28 +25,40 @@ public class CustomUserDetailsService {
 
             // Create SQL query
             String sql = "SELECT \n" +
-                    "    c.CustomerID, \n" +
-                    "    c.FirstName, \n" +
-                    "    c.LastName, \n" +
-                    "    COALESCE(SUM(a.AccountBalance), 0) AS TotalAccountBalance,\n" +
-                    "    COALESCE(SUM(s.Quantity * s.CurrentPrice), 0) AS TotalStockValue,\n" +
-                    "    COALESCE(SUM(mf.InvestmentAmount), 0) AS TotalMutualFundValue,\n" +
-                    "    COALESCE(SUM(fd.MaturityAmount), 0) AS TotalFixedDepositValue,\n" +
-                    "    (\n" +
-                    "        COALESCE(SUM(a.AccountBalance), 0) \n" +
-                    "        + COALESCE(SUM(s.Quantity * s.CurrentPrice), 0)\n" +
-                    "        + COALESCE(SUM(mf.InvestmentAmount), 0)\n" +
-                    "        + COALESCE(SUM(fd.MaturityAmount), 0)\n" +
-                    "    ) AS TotalAssets\n" +
-                    "FROM Customers c\n" +
-                    "LEFT JOIN Accounts a ON c.CustomerID = a.CustomerID\n" +
-                    "LEFT JOIN InvestmentAccounts ia ON c.CustomerID = ia.CustomerID\n" +
-                    "LEFT JOIN Stocks s ON ia.InvestmentAccountID = s.InvestmentAccountID\n" +
-                    "LEFT JOIN MutualFunds mf ON ia.InvestmentAccountID = mf.InvestmentAccountID\n" +
-                    "LEFT JOIN FixedDeposits fd ON ia.InvestmentAccountID = fd.InvestmentAccountID\n" +
-                    "GROUP BY c.CustomerID, c.FirstName, c.LastName\n" +
-                    "ORDER BY TotalAssets DESC\n" +
-                    "LIMIT 5";
+                    "    CustomerID, \n" +
+                    "    FirstName, \n" +
+                    "    LastName, \n" +
+                    "    TotalAccountBalance,\n" +
+                    "    TotalStockValue,\n" +
+                    "    TotalMutualFundValue,\n" +
+                    "    TotalFixedDepositValue,\n" +
+                    "    TotalAssets,\n" +
+                    "    TotalAssets * 0.10 AS TaxLiability\n" +
+                    "FROM (\n" +
+                    "    SELECT \n" +
+                    "        c.CustomerID, \n" +
+                    "        c.FirstName, \n" +
+                    "        c.LastName, \n" +
+                    "        COALESCE(SUM(a.AccountBalance), 0) AS TotalAccountBalance,\n" +
+                    "        COALESCE(SUM(s.Quantity * s.CurrentPrice), 0) AS TotalStockValue,\n" +
+                    "        COALESCE(SUM(mf.InvestmentAmount), 0) AS TotalMutualFundValue,\n" +
+                    "        COALESCE(SUM(fd.MaturityAmount), 0) AS TotalFixedDepositValue,\n" +
+                    "        (\n" +
+                    "            COALESCE(SUM(a.AccountBalance), 0) \n" +
+                    "            + COALESCE(SUM(s.Quantity * s.CurrentPrice), 0)\n" +
+                    "            + COALESCE(SUM(mf.InvestmentAmount), 0)\n" +
+                    "            + COALESCE(SUM(fd.MaturityAmount), 0)\n" +
+                    "        ) AS TotalAssets\n" +
+                    "    FROM Customers c\n" +
+                    "    LEFT JOIN Accounts a ON c.CustomerID = a.CustomerID\n" +
+                    "    LEFT JOIN InvestmentAccounts ia ON c.CustomerID = ia.CustomerID\n" +
+                    "    LEFT JOIN Stocks s ON ia.InvestmentAccountID = s.InvestmentAccountID\n" +
+                    "    LEFT JOIN MutualFunds mf ON ia.InvestmentAccountID = mf.InvestmentAccountID\n" +
+                    "    LEFT JOIN FixedDeposits fd ON ia.InvestmentAccountID = fd.InvestmentAccountID\n" +
+                    "    GROUP BY c.CustomerID, c.FirstName, c.LastName\n" +
+                    "    ORDER BY TotalAssets DESC\n" +
+                    "    LIMIT 5\n" +
+                    ") AS TopCustomersWithAssets;\n";
 
             // Create a prepared statement
             preparedStatement = connection.prepareStatement(sql);
@@ -65,6 +76,7 @@ public class CustomUserDetailsService {
                 double totalMutualFundValue = resultSet.getDouble("TotalMutualFundValue");
                 double totalFixedDepositValue = resultSet.getDouble("TotalFixedDepositValue");
                 double totalAssets = resultSet.getDouble("TotalAssets");
+                double taxLiability = resultSet.getDouble("TaxLiability");
 //                String transactionType = resultSet.getString("TransactionType");
 
 
@@ -78,6 +90,7 @@ public class CustomUserDetailsService {
                 customerTransactionJson.put("TotalMutualFundValue", totalMutualFundValue);
                 customerTransactionJson.put("TotalFixedDepositValue", totalFixedDepositValue);
                 customerTransactionJson.put("TotalAssets", totalAssets);
+                customerTransactionJson.put("TaxLiability",taxLiability);
 
                 jsonObjectList.add(customerTransactionJson);
             }

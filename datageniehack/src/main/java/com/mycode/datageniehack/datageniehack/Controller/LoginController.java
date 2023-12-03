@@ -4,6 +4,8 @@ import com.mycode.datageniehack.datageniehack.Entity.User;
 import com.mycode.datageniehack.datageniehack.Repository.UserRepository;
 import com.mycode.datageniehack.datageniehack.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -65,15 +67,15 @@ public class LoginController {
 //        return true;
 //    }
     @PostMapping("/validate")
-    public String validateLogin(@RequestParam String username, @RequestParam String password) {
+    public ResponseEntity<String> validateLogin(@RequestParam String username, @RequestParam String password) {
         // Check if the provided username and password exist in the database
         User user = userService.findByUsername(username);
         System.out.println(user.toString());
 
         if (user != null && user.getPassword().equals(password)) {
-            return "Login successful! Welcome, " + user.getUsername();
+            return ResponseEntity.ok().body("Login successful");
         } else {
-            return "Invalid username or password. Please try again.";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid username or password");
         }
     }
 
